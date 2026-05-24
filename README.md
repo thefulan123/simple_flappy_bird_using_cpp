@@ -123,6 +123,8 @@ sdl2-config --version
 
 ## 🚀 Cara Build & Menjalankan
 
+### 🐧 Linux / WSL
+
 ```bash
 # 1. Clone repositori
 git clone https://github.com/thefulan123/simple_flappy_bird_using_cpp.git
@@ -138,15 +140,53 @@ make run
 ./flappy_bird
 ```
 
-**Perintah Makefile:**
+### 🪟 Windows — Build .exe (Hasilnya file .exe siap pakai)
+
+> **Kamu punya 3 pilihan:**
+
+#### Pilihan A: Otomatis (paling mudah) ⭐
+**Double-click** `build_windows.bat` di File Explorer.
+Script ini akan **mendownload semua yang dibutuhkan** (MinGW + SDL2) dan membuild `.exe` secara otomatis.
+
+#### Pilihan B: Manual (butuh MSYS2)
+Jika sudah punya [MSYS2](https://www.msys2.org/):
+```bash
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2
+cd simple_flappy_bird_using_cpp
+g++ -static-libgcc -static-libstdc++ src/*.cpp -lmingw32 -lSDL2main -lSDL2 -mwindows -o flappy_bird.exe
+```
+
+#### Pilihan C: Dari WSL (Windows Subsystem for Linux)
+```bash
+# Di terminal WSL, clone ke folder Windows:
+git clone https://github.com/thefulan123/simple_flappy_bird_using_cpp.git /mnt/c/Users/%USERNAME%/Desktop/
+cd /mnt/c/Users/%USERNAME%/Desktop/simple_flappy_bird_using_cpp
+make win
+```
+
+**Output yang dihasilkan:**
+`flappy_bird.exe` — **file standalone** siap dijalankan tanpa perlu install apa-apa.
+Cukup **double-click** file `.exe`-nya atau kirim ke temanmu!
+
+### 📦 Static Build (Linux standalone)
+```bash
+make static   # Hasil: flappy_bird (standalone binary, tanpa dependensi SDL2)
+```
+
+### Perintah Makefile
+
 | Perintah | Fungsi |
 |----------|--------|
-| `make` | Build game (compile + link) |
-| `make run` | Build lalu jalankan |
+| `make` | Build game untuk Linux (dynamic linking) |
+| `make static` | Build game untuk Linux (static linking — *standalone*) |
+| `make win` | Build `.exe` untuk Windows (via WSL + cmd.exe) |
+| `make run` | Build lalu jalankan game |
 | `make clean` | Hapus semua file hasil build |
 
-**Output yang diharapkan:**
-Jendela game berjudul **"Flappy Bird C++"** akan muncul dengan latar biru langit dan tulisan "FLAPPY BIRD" di tengah.
+> **💡 Hasil build berupa file `.exe` yang portabel:**
+> - Bisa dijalankan di Windows tanpa perlu install SDL2
+> - Bisa dikirim ke teman — mereka tinggal double-click
+> - Ukuran ~2.7 MB (karena SDL2 sudah di-link secara static)
 
 ---
 
@@ -177,6 +217,7 @@ simple_flappy_bird_using_cpp/
 │
 ├── Makefile               # Build system — otomatisasi kompilasi & linking
 ├── README.md              # Dokumentasi ini
+├── build_windows.bat      # 🔧 Build script untuk Windows (double-click to build)
 │
 ├── src/                   # ✨ Semua source code ada di sini
 │   ├── config.h           # Konfigurasi & konstanta global game
@@ -189,7 +230,8 @@ simple_flappy_bird_using_cpp/
 │   └── main.cpp           # Entry point — memulai eksekusi
 │
 ├── build/                 # File objek (.o) — hasil kompilasi (auto-generated)
-└── flappy_bird            # Binary executable (auto-generated)
+├── flappy_bird            # Binary Linux (auto-generated)
+└── flappy_bird.exe        # 🪟 Binary Windows — siap dijalankan! (auto-generated)
 ```
 
 > 📌 **Konsep penting:** Setiap file `.cpp` memiliki pasangan `.h` (header). Header berisi **deklarasi** (apa yang ada), file `.cpp` berisi **implementasi** (bagaimana cara kerjanya). Ini adalah prinsip **separasi of concerns** dalam C++.
@@ -530,6 +572,81 @@ main()
         │
         └─ running = false  → Game loop berhenti
                                 → Destructor: SDL_DestroyRenderer, SDL_DestroyWindow, SDL_Quit()
+```
+
+---
+
+## 🪟 Membangun .exe untuk Windows
+
+Salah satu fitur penting dari proyek ini adalah **file `.exe` yang berdiri sendiri** (standalone). Kamu bisa membuild-nya dan langsung jalankan di Windows tanpa perlu install apa pun.
+
+### Cara Kerja Cross-Compilation
+
+Proses build `.exe` dilakukan dengan **MinGW-w64** — compiler C++ yang menghasilkan executable Windows, bukan Linux. Karena kita menggunakan **static linking**, semua library (termasuk SDL2) disalin langsung ke dalam file `.exe`.
+
+```
+Source code (.cpp)
+      │
+      ▼
+  MinGW-w64 (g++) ────► SDL2 (static library .a)
+      │
+      ▼
+  flappy_bird.exe  ←── Semua dependensi sudah di-link langsung
+      │                    ke dalam file (tidak perlu DLL tambahan)
+      ▼
+  Double-click → langsung main!
+```
+
+### Kenapa Static Linking?
+
+| Approach | Kelebihan | Kekurangan |
+|----------|-----------|------------|
+| **Dynamic linking** (default) | File kecil (~100 KB) | Butuh SDL2.dll di folder yang sama |
+| **Static linking** ✅ | **Standalone!** Bisa dikirim ke teman | File lebih besar (~2.7 MB) |
+
+Dengan static linking, kamu cukup copy `flappy_bird.exe` ke USB, email, atau upload — penerima tinggal double-click.
+
+### Opsi Build untuk Windows
+
+**Opsi 1: `build_windows.bat` (termudah)**
+Script ini akan:
+1. Cek apakah MinGW-w64 ada — jika tidak, download otomatis
+2. Cek apakah SDL2 MinGW ada — jika tidak, download otomatis
+3. Compile semua source code dengan static linking
+4. Hasil: `flappy_bird.exe`
+
+Cukup **double-click `build_windows.bat`** dan tunggu ~2-3 menit (tergantung kecepatan internet untuk download toolchain).
+
+**Opsi 2: MSYS2 (jika sudah terinstall)**
+```bash
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2
+cd simple_flappy_bird_using_cpp
+g++ -static-libgcc -static-libstdc++ src/*.cpp -lmingw32 -lSDL2main -lSDL2 -mwindows -o flappy_bird.exe
+```
+
+**Opsi 3: Cross-compile dari WSL**
+```bash
+# Pastikan MinGW-w64 terinstall di Windows:
+#   Download dari: https://winlibs.com/
+#   Extract ke: C:\mingw64
+
+# Lalu jalankan dari WSL:
+cmd.exe /c "set PATH=C:\mingw64\bin;%PATH% && g++ src/*.cpp -static-libgcc -static-libstdc++ -IC:\sdl2-mingw\x86_64-w64-mingw32\include -LC:\sdl2-mingw\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2 -mwindows -o flappy_bird.exe"
+```
+
+### Penjelasan Flag Compiler
+
+```bash
+g++ -static-libgcc        # Link static library libgcc (biar gak butuh libgcc_s.dll)
+    -static-libstdc++      # Link static library libstdc++ (biar gak butuh libstdc++-6.dll)
+    -I"path/to/SDL2/include"  # Header SDL2
+    -L"path/to/SDL2/lib"      # Library SDL2 (static .a)
+    src/*.cpp              # Semua source file
+    -lmingw32              # Library MinGW entry point (WinMain)
+    -lSDL2main             # SDL2 entry point
+    -lSDL2                 # SDL2 library (static)
+    -mwindows              # Buat GUI app (bukan console), supaya gak muncul terminal
+    -o flappy_bird.exe     # Nama output
 ```
 
 ---
