@@ -1,0 +1,12 @@
+# Binary
+flappy_bird
+
+# Build directory
+build/
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
