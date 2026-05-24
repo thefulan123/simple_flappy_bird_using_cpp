@@ -52,13 +52,15 @@ echo [3/3] Compiling Flappy Bird...
 
 set PATH=%MINGW_DIR%\bin;%MINGW_DIR%\libexec\gcc\x86_64-w64-mingw32\16.1.0;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
 
-"%MINGW_DIR%\bin\g++.exe" -static-libgcc -static-libstdc++ ^
+"%MINGW_DIR%\bin\g++.exe" -static ^
   -I"%SDL2_DIR%\include" ^
   -I"%SDL2_DIR%\include\SDL2" ^
   -L"%SDL2_DIR%\lib" ^
   -o "%~dp0flappy_bird.exe" ^
   "%~dp0src\main.cpp" "%~dp0src\game.cpp" "%~dp0src\bird.cpp" "%~dp0src\pipe.cpp" ^
-  -lmingw32 -lSDL2main -lSDL2 -mwindows
+  -lmingw32 -lSDL2main -lSDL2 -mwindows ^
+  -lsetupapi -lole32 -loleaut32 -limm32 -lwinmm -lversion ^
+  -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lshell32 -luuid
 
 if !ERRORLEVEL! EQU 0 (
     echo.
