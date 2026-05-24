@@ -22,10 +22,16 @@ private:
     void handleEvents();
     void update();
     void render();
+    void renderBackground();
     void renderMenu();
-    void renderGameOver();
     void renderScore();
+    void renderGameOver();
     void renderGround();
+    void renderPanel(int x, int y, int w, int h, SDL_Color color);
+
+    void drawChar(int x, int y, char c, int size, SDL_Color color);
+    void drawText(int x, int y, const char* text, int size, SDL_Color color);
+    void drawLine(int x1, int y1, int x2, int y2, SDL_Color color);
 
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -34,6 +40,8 @@ private:
     Bird bird;
     PipeManager pipeManager;
     int score;
+    int highScore;
+    int blinkCounter;
     Uint32 lastFrameTime;
 };
 

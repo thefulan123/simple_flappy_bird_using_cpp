@@ -24,6 +24,9 @@ const int PIPE_SPAWN_INTERVAL = 120;
 // Ground
 const int GROUND_HEIGHT = 80;
 
+// Blink
+const int BLINK_INTERVAL = 30;
+
 // Colors
 const SDL_Color COLOR_SKY = {135, 206, 235, 255};
 const SDL_Color COLOR_BIRD = {255, 255, 0, 255};
@@ -31,5 +34,10 @@ const SDL_Color COLOR_PIPE = {0, 150, 0, 255};
 const SDL_Color COLOR_PIPE_EDGE = {0, 180, 0, 255};
 const SDL_Color COLOR_GROUND = {139, 90, 43, 255};
 const SDL_Color COLOR_WHITE = {255, 255, 255, 255};
+const SDL_Color COLOR_BLACK = {0, 0, 0, 255};
+const SDL_Color COLOR_PANEL = {0, 0, 0, 180};
+const SDL_Color COLOR_GOLD = {255, 215, 0, 255};
+const SDL_Color COLOR_RED = {255, 50, 50, 255};
+const SDL_Color COLOR_DARK_BG = {50, 50, 80, 200};
 
 #endif
