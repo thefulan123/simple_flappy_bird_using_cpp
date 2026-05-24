@@ -25,6 +25,7 @@
   - [`pipe.h` / `pipe.cpp` — Sistem Pipa & Score](#pipeh--pipecpp--sistem-pipa--score)
   - [`game.h` / `game.cpp` — Game State Machine](#gameh--gamecpp--game-state-machine)
   - [`main.cpp` — Entry Point](#maincpp--entry-point)
+- [Installer Windows](#installer-windows)
 - [Alur Eksekusi Program](#alur-eksekusi-program)
 - [Kustomisasi Game](#kustomisasi-game)
 - [Latihan untuk Kamu](#latihan-untuk-kamu)
@@ -186,7 +187,7 @@ make static   # Hasil: flappy_bird (standalone binary, tanpa dependensi SDL2)
 > **💡 Hasil build berupa file `.exe` yang portabel:**
 > - Bisa dijalankan di Windows tanpa perlu install SDL2
 > - Bisa dikirim ke teman — mereka tinggal double-click
-> - Ukuran ~2.7 MB (karena SDL2 sudah di-link secara static)
+> - Ukuran ~15 MB (karena semua library sudah di-link secara static)
 
 ---
 
@@ -228,6 +229,11 @@ simple_flappy_bird_using_cpp/
 │   ├── game.h             # Deklarasi class Game
 │   ├── game.cpp           # Implementasi Game (game loop, state machine)
 │   └── main.cpp           # Entry point — memulai eksekusi
+│
+├── installer/             # 📦 Installer Windows (.exe)
+│   ├── FlappyBird_Installer.exe   # Installer siap pakai
+│   ├── installer.nsi              # Source code installer (NSIS)
+│   └── build_installer.bat        # Script rebuild installer
 │
 ├── build/                 # File objek (.o) — hasil kompilasi (auto-generated)
 ├── flappy_bird            # Binary Linux (auto-generated)
@@ -602,7 +608,7 @@ Source code (.cpp)
 | Approach | Kelebihan | Kekurangan |
 |----------|-----------|------------|
 | **Dynamic linking** (default) | File kecil (~100 KB) | Butuh SDL2.dll di folder yang sama |
-| **Static linking** ✅ | **Standalone!** Bisa dikirim ke teman | File lebih besar (~2.7 MB) |
+| **Static linking** ✅ | **Standalone!** Bisa dikirim ke teman | File lebih besar (~15 MB) |
 
 Dengan static linking, kamu cukup copy `flappy_bird.exe` ke USB, email, atau upload — penerima tinggal double-click.
 
@@ -651,7 +657,92 @@ g++ -static-libgcc        # Link static library libgcc (biar gak butuh libgcc_s.
 
 ---
 
-## ⚙️ Kustomisasi Game
+## 📦 Installer Windows
+
+Selain `.exe` portable, proyek ini juga menyediakan **installer Windows** yang akan:
+- Menginstall game ke `C:\Program Files\Flappy Bird C++`
+- Membuat shortcut di **Start Menu** dan **Desktop**
+- Mendaftarkan game ke **Add/Remove Programs** (bisa uninstall dari Settings)
+- Menampilkan halaman **selesai** dengan tombol "Mainkan sekarang"
+
+### Cara Pakai Installer
+
+**Paling mudah:** Buka folder `installer/`, double-click `FlappyBird_Installer.exe`:
+
+```
+installer/
+  ├── FlappyBird_Installer.exe   ← Klik ini!
+  ├── installer.nsi              ← Source code NSIS
+  └── build_installer.bat        ← Untuk rebuild installer
+```
+
+### Panduan Instalasi (Langkah demi Langkah)
+
+| Langkah | Gambaran |
+|---------|----------|
+| **1. Welcome** | Klik Next |
+| **2. Directory** | Pilih folder tujuan (default: `C:\Program Files\Flappy Bird C++`) |
+| **3. Install** | Proses instalasi berjalan |
+| **4. Finish** | Centang "Mainkan Flappy Bird sekarang" lalu Finish |
+
+Setelah instalasi:
+- **Start Menu** → cari "Flappy Bird C++"
+- **Desktop** → double-click shortcut "Flappy Bird C++"
+- **Uninstall** → Settings → Apps → cari "Flappy Bird C++" → Uninstall
+
+### Cara Rebuild Installer
+
+Jika kamu memodifikasi game dan ingin membuat installer baru:
+
+**Windows:**
+```bash
+# Double-click file ini:
+installer\build_installer.bat
+```
+
+Script ini akan otomatis:
+1. Build `flappy_bird.exe` (jika belum ada)
+2. Download NSIS (jika belum ada)
+3. Compile installer baru → `installer/FlappyBird_Installer.exe`
+
+### Cara Kerja NSIS
+
+Installer dibuat menggunakan **NSIS** (Nullsoft Scriptable Install System) — tool open source untuk membuat installer Windows.
+
+File `installer/installer.nsi` adalah script yang mendefinisikan:
+- **Apa yang diinstall** — file `flappy_bird.exe`
+- **Ke mana diinstall** — `$PROGRAMFILES64\Flappy Bird C++`
+- **Shortcut** — Start Menu + Desktop
+- **Registry** — untuk Add/Remove Programs
+- **Uninstaller** — cara menghapus instalasi
+
+```
+installer.nsi
+      │
+      ▼
+  makensis.exe (NSIS compiler)
+      │
+      ▼
+  FlappyBird_Installer.exe  ← Self-extracting archive
+      │
+      ▼
+  [User runs installer]
+      │
+      ├──► C:\Program Files\Flappy Bird C++\flappy_bird.exe
+      ├──► Start Menu shortcut
+      ├──► Desktop shortcut
+      └──► Windows Registry (Add/Remove Programs)
+```
+
+### Kenapa Pakai Installer?
+
+| Tanpa Installer | Dengan Installer |
+|-----------------|------------------|
+| File `.exe` di download folder | Terinstall rapi di Program Files |
+| Tidak ada shortcut otomatis | Shortcut Start Menu + Desktop |
+| Hapus manual (delete file) | Uninstall dari Settings |
+| Tidak terdaftar di Windows | Muncul di Add/Remove Programs |
+| Ribet kalau sering update | Tinggal install ulang versi baru |
 
 Salah satu tujuan pembelajaran adalah **experimentasi**. Coba ubah nilai-nilai di `src/config.h` dan lihat bagaimana game berubah:
 
