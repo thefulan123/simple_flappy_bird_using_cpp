@@ -4,6 +4,9 @@ flappy_bird
 # Build directory
 build/
 
+# Runtime data
+highscore.dat
+
 # Editor files
 *.swp
 *.swo

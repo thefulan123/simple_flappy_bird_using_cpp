@@ -47,6 +47,9 @@ Tujuan proyek ini **bukan** sekadar membuat game yang bisa dimainkan, melainkan 
 | **Collision Detection** | Axis-Aligned Bounding Box (AABB) via `SDL_HasIntersection` |
 | **Object Pooling** | Vector of pipes yang di-reuse |
 | **Event-Driven Input** | SDL Event loop untuk keyboard |
+| **Pixel Font Rendering** | Render teks dengan dot matrix 3×5 tanpa library tambahan |
+| **Persistent Storage** | Simpan high score ke file `highscore.dat` |
+| **Blinking Animation** | Efek kedip pada teks menggunakan frame counter |
 
 ---
 
@@ -61,6 +64,10 @@ Setelah mempelajari kode ini, kamu akan memahami:
 5. **Bagaimana membuat objek muncul secara procedural** — pipe yang spawn-nya acak
 6. **Cara merender grafis 2D** — menggambar persegi panjang, garis, dan bentuk dasar
 7. **Cara mengatur framerate** — supaya game berjalan konsisten di semua komputer
+8. **Membuat font bitmap sendiri** — render teks dengan dot matrix 3×5 tanpa library font
+9. **Game State Management** — transisi antar menu, gameplay, dan game over
+10. **Persistent high score** — simpan dan baca data dari file (`highscore.dat`)
+11. **Efek UI animasi** — teks berkedip, panel transparan, background awan
 
 ---
 
@@ -196,7 +203,15 @@ make static   # Hasil: flappy_bird (standalone binary, tanpa dependensi SDL2)
 | Tombol | Aksi |
 |--------|------|
 | `SPACE` atau `↑` (Panah Atas) | **Mulai game** / **Flap (terbang)** / **Restart** |
-| `ESC` | Keluar dari game |
+| `ESC` | **Menu:** Keluar game / **Game Over:** Kembali ke menu |
+
+### Menu Utama
+
+Saat game dimulai, kamu akan melihat **Menu Utama** dengan:
+- 🐤 Burung yang terbang naik-turun sebagai animasi
+- 🏆 **High Score** (skor tertinggi) jika sudah pernah bermain sebelumnya
+- 💡 Teks **"TEKAN SPACE UNTUK MAIN"** yang berkedip
+- ☁️ Latar belakang dengan awan-awan dekoratif
 
 ### Aturan Main
 
@@ -204,8 +219,18 @@ make static   # Hasil: flappy_bird (standalone binary, tanpa dependensi SDL2)
 2. **Hindari pipa hijau** yang datang dari kanan — jangan sampai menyentuhnya
 3. **Jangan menyentuh tanah** (garis batas bawah) atau **batas atas layar**
 4. Setiap berhasil **melewati celah pipa**, kamu mendapat **1 poin**
-5. Skor ditampilkan di bagian atas layar
-6. Jika game over, tekan **SPACE** untuk memulai ulang
+5. **Skor** ditampilkan di panel atas layar
+6. **High Score** otomatis tersimpan dan muncul di menu maupun game over
+
+### Game Over
+
+Saat burung menabrak, layar akan menampilkan **Panel Game Over**:
+- 🔴 Judul **"GAME OVER"** warna merah
+- 📊 **Skor** kamu saat ini
+- 🏆 **Skor Terbaik** (high score) sepanjang masa
+- ✨ **"SKOR TERTINGGI!"** jika kamu memecahkan rekor
+- 💡 **"TEKAN SPACE LAGI"** untuk main lagi (berkedip)
+- 🔙 **"ESC = MENU UTAMA"** untuk kembali ke menu
 
 > 🎯 **Tips:** Tekan SPACE secara ritmis, jangan panik! Amati celah pipa dan atur timing flap-mu.
 
@@ -429,7 +454,7 @@ for (auto& pipe : pipeManager.getPipes()) {
 
 ---
 
-### `game.h` / `game.cpp` — Game State Machine
+### `game.h` / `game.cpp` — Game State Machine & UI Rendering
 
 #### Game Loop
 
@@ -520,7 +545,13 @@ void Game::handleEvents() {
                     // ... flap / start / restart
                     break;
                 case SDLK_ESCAPE:
-                    running = false;
+                    // Di menu: keluar game
+                    // Di game over: kembali ke menu
+                    if (state == GameState::MENU) {
+                        running = false;
+                    } else {
+                        state = GameState::MENU;
+                    }
                     break;
             }
         }
@@ -545,6 +576,74 @@ int main(int, char*[]) {
 
 **Mengapa hanya 7 baris?** Semua logika kompleks sudah dibungkus di dalam class `Game`. Ini adalah prinsip **abstraksi** — `main.cpp` tidak perlu tahu detail bagaimana game bekerja, cukup panggil `init()` dan `run()`.
 
+### Fitur UI Tambahan di `game.cpp`
+
+#### Font Bitmap 3×5 (`drawChar` / `drawText`)
+
+Karena game ini tidak menggunakan library font eksternal, kita membuat **font bitmap sendiri** dengan ukuran 3×5 pixel per karakter:
+
+```cpp
+void Game::drawChar(int x, int y, char c, int size, SDL_Color color) {
+    // Map karakter ke dot matrix 3×5
+    switch (c) {
+        case 'A': map[0][0]=1;map[0][1]=1;map[0][2]=1;  // ███
+                  map[1][0]=1;map[1][2]=1;              // █ █
+                  map[2][0]=1;map[2][1]=1;map[2][2]=1;  // ███
+                  map[3][0]=1;map[3][2]=1;              // █ █
+                  map[4][0]=1;map[4][2]=1;              // █ █
+                  break;
+        // ... setiap karakter A-Z, 0-9, dan simbol
+    }
+    // Render dot matrix ke layar dengan ukuran 2×2 pixel per dot
+    for (int row = 0; row < 5; row++)
+        for (int col = 0; col < 3; col++)
+            if (map[row][col])
+                SDL_RenderFillRect(renderer, &pixel);
+}
+```
+
+#### Panel Transparan (`renderPanel`)
+
+Semua menu dan game over menggunakan **panel semi-transparan** sebagai background teks:
+
+```cpp
+void Game::renderPanel(int x, int y, int w, int h, SDL_Color color) {
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    // Fill dengan warna semi-transparan
+    SDL_RenderFillRect(renderer, &rect);
+    // Border tipis di pinggir
+    SDL_RenderDrawRect(renderer, &border);
+}
+```
+
+#### Efek Blink
+
+Teks "TEKAN SPACE" berkedip menggunakan **frame counter**:
+
+```cpp
+blinkCounter++;  // Bertambah setiap frame
+if ((blinkCounter / BLINK_INTERVAL) % 2 == 0) {
+    drawText(x, y, "TEKAN SPACE", size, color);
+}
+```
+
+#### Persistent High Score
+
+Skor tertinggi disimpan ke file `highscore.dat`:
+
+```cpp
+// Saat init — baca high score dari file
+std::ifstream file("highscore.dat");
+if (file.is_open()) { file >> highScore; file.close(); }
+
+// Saat game over — simpan jika rekor baru
+if (score > highScore) {
+    highScore = score;
+    std::ofstream file("highscore.dat");
+    if (file.is_open()) { file << highScore; file.close(); }
+}
+```
+
 ---
 
 ## 🔄 Alur Eksekusi Program
@@ -562,15 +661,38 @@ main()
         │   ├─ handleEvents()    → Baca input keyboard, update state
         │   ├─ update()          → Update posisi burung & pipa, deteksi collision
         │   │   ├─ bird.update()       → velocity += gravity; y += velocity
+        │   │   ├─ bird.update() (menu) → auto-flap biar burung terbang
         │   │   ├─ pipeManager.update() → spawn, move, cleanup pipes
-        │   │   └─ cek collision       → SDL_HasIntersection() atau boundary
+        │   │   ├─ cek collision       → SDL_HasIntersection() atau boundary
+        │   │   └─ simpan high score   → file highscore.dat (jika rekor baru)
         │   │
-        │   ├─ render()          → Gambar semua objek
-        │   │   ├─ SDL_RenderClear()
-        │   │   ├─ pipeManager.render()
-        │   │   ├─ bird.render()
-        │   │   ├─ renderGround()
-        │   │   ├─ renderScore()
+        │   ├─ render()          → Gambar semua objek sesuai state
+        │   │   │
+        │   │   ├─ [MENU]
+        │   │   │   ├─ renderBackground()  → langit + awan
+        │   │   │   ├─ pipeManager.render()
+        │   │   │   ├─ renderGround()
+        │   │   │   ├─ renderPanel()       → panel transparan
+        │   │   │   ├─ bird.render()       → burung animasi
+        │   │   │   ├─ drawText()          → "FLAPPY BIRD" + high score
+        │   │   │   └─ teks blink          → counter frame
+        │   │   │
+        │   │   ├─ [PLAYING]
+        │   │   │   ├─ renderBackground()
+        │   │   │   ├─ pipeManager.render()
+        │   │   │   ├─ bird.render()
+        │   │   │   ├─ renderGround()
+        │   │   │   └─ renderScore()       → panel + angka besar
+        │   │   │
+        │   │   ├─ [GAME OVER]
+        │   │   │   ├─ pipeManager.render()
+        │   │   │   ├─ bird.render()
+        │   │   │   ├─ renderGround()
+        │   │   │   ├─ renderScore()
+        │   │   │   ├─ renderPanel()       → panel game over
+        │   │   │   ├─ drawText()          → skor + best + rekor
+        │   │   │   └─ teks blink          → "TEKAN SPACE LAGI"
+        │   │   │
         │   │   └─ SDL_RenderPresent()
         │   │
         │   └─ SDL_Delay()      → Atur framerate 60 FPS
